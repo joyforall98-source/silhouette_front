@@ -374,7 +374,7 @@ function startWave(){
   G.wave++; const n=G.wave;
   G.eHp=1+.035*(n-1); G.eSpd=Math.min(2.2,1+.025*(n-1));
   G.spawnQ=buildSpawnQueue(n); G.waveT=0; G.phase="spawn";
-  banner("WAVE "+n,(n%10===0?"중전차 출현 · ":"")+"적 체력 ×"+G.eHp.toFixed(2)+" · 속도 ×"+G.eSpd.toFixed(2));
+  banner("WAVE "+n,(n%10===0?"중전차 출현 · ":"")+"적 체력 ×"+G.eHp.toFixed(2)+" · 속도 ×"+eMove().toFixed(2));
 }
 function isOpen(k){const d=ITEMS[k];return !!d.open||(d.req?G.items[d.req].done:false);}
 
@@ -442,7 +442,10 @@ function lightning(){
   explosion(px,gy(px),34,55,0,false);   // side 0: hurts both armies
   sfx("thunder",x);
 }
-function eMul(u){return u.side<0?G.eSpd*(inSmoke(u)?.35:1):1;}
+// enemy movement multiplier. E_MOVE is a flat base boost on top of the per-wave eSpd; it only affects movement, not rate of fire.
+const E_MOVE=1.2;
+function eMove(){return G.eSpd*E_MOVE;}
+function eMul(u){return u.side<0?eMove()*(inSmoke(u)?.35:1):1;}
 
 function damage(o,amt){
   if(o.dead)return;
@@ -662,7 +665,7 @@ const LOGIC={
     }
   },
   scout(u,dt){
-    u.x+=u.dir*UNIT.scout.speed*G.eSpd*dt;
+    u.x+=u.dir*UNIT.scout.speed*eMove()*dt;
     u.y+=(smoothGround(u.x)-u.alt-u.y)*Math.min(1,dt*1.5);
     u.prop=(u.prop||0)+dt*50; u.cd-=dt;
     if(u.cd<=0)for(const o of G.units){ if(o.side>0&&!o.air&&!o.dig&&Math.abs(o.x-(u.x-30))<25){u.cd=2.2;
@@ -671,7 +674,7 @@ const LOGIC={
   // enemy sapper: tunnels behind our front line, surfaces, buries two mines on our supply route, then fights
   sapper(u,dt){
     if(!u.dig)return rifleman(u,dt);
-    u.x-=UNIT.sapper.speed*1.6*G.eSpd*dt; u.y=gy(u.x); dust(u,dt);
+    u.x-=UNIT.sapper.speed*1.6*eMove()*dt; u.y=gy(u.x); dust(u,dt);
     if(u.x<Math.max(140,frontLine()-120-u.off)){
       surface(u,30); layMine(u.x-26,-1); layMine(u.x+22,-1);
       floatText(u.x,u.y-40,"땅굴 침투!",ENEMY); sfx("alarm",u.x);
